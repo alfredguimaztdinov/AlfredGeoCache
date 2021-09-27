@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/miCalculate"
+        android:icon="@drawable/ic_baseline_access_time_filled_24"
+        android:title="Calculate"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/miNavigate"
+        android:icon="@drawable/ic_baseline_directions_24"
+        android:title="Navigate"
+        app:showAsAction="always" />
+</menu>

@@ -2,12 +2,17 @@ package com.example.alfredgeocache
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -19,6 +24,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import kotlin.math.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -195,18 +201,71 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
             val sharedPreferencess = getSharedPreferences(this.SHARED_PREF_NAME, MODE_PRIVATE)
-            val lon = sharedPreferencess.getFloat(this.LONGITUDE, 20F)
-            val lat = sharedPreferencess.getFloat(this.LATITUDE, 20F)
+            val lon = sharedPreferencess.getFloat(this.LONGITUDE, 0.0f)
+            val lat = sharedPreferencess.getFloat(this.LATITUDE, 0.0f)
 
 
-            val resumedPosition = LatLng(lon.toDouble(),lat.toDouble())
-            Log.e(TAG,"My coordinates: $resumedPosition")
+            val resumedPosition = LatLng(lon.toDouble(), lat.toDouble())
+            Log.e(TAG, "My coordinates: $resumedPosition")
 
             mMap.addMarker(MarkerOptions().position(resumedPosition).draggable(false))
             mMap.moveCamera(CameraUpdateFactory.newLatLng(resumedPosition))
-
+        Log.e(TAG, "My coordinates:2 $resumedPosition")
 
     }
+
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_navigate, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, MODE_PRIVATE)
+        val sharedPreferencess = getSharedPreferences(this.SHARED_PREF_NAME, MODE_PRIVATE)
+        val lon = sharedPreferencess.getFloat(this.LONGITUDE, 0.0f).toDouble()
+        val lat = sharedPreferencess.getFloat(this.LATITUDE, 0.0f).toDouble()
+        //Check if navigate was clicked
+        if (item.itemId == R.id.miNavigate){
+
+            val gmmIntentUri =
+                    Uri.parse("google.navigation:q=$lon,$lat")
+
+            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+            mapIntent.setPackage("com.google.android.apps.maps")
+            startActivity(mapIntent)
+            Log.i(TAG, "Navigate tapped")
+            Log.i(TAG, "$lon, $lat")
+            return true
+        }
+        if (item.itemId == R.id.miCalculate){
+            val lat2 = lastKnownLocation!!.latitude
+            val lon2 = lastKnownLocation!!.longitude
+
+            val dLat = Math.toRadians(lat - lat2);
+            val dLon = Math.toRadians(lon - lon2);
+            val originLat = Math.toRadians(lat2);
+            val destinationLat = Math.toRadians(lat);
+            Log.i(TAG, "$lon, $lat, $lat2, $lon2, $dLat, $dLon")
+            val a = sin(dLat / 2).pow(2.toDouble()) + sin(dLon / 2).pow(2.toDouble()) * cos(originLat) * cos(destinationLat);
+            val c = 2 * asin(sqrt(a));
+
+            Log.i(TAG, "$c")
+            val distanceCar = AlertDialog.Builder(this)
+                    .setTitle("Distance")
+                    .setMessage("$c Meters from your vehicle")
+                    .setPositiveButton("Ok"){_,_,-> }
+                    .create()
+            distanceCar.show()
+
+
+
+        }
+
+        return super.onOptionsItemSelected(item)
+    }
+
+
 
 private fun actionBarUI(){
     val fab: View = findViewById(R.id.fab)
@@ -240,8 +299,9 @@ private fun actionBarUI(){
                         editor.putBoolean(LOGGED_SHARED, true)
                         editor.putFloat(LATITUDE, lon.toFloat())
                         editor.putFloat(LONGITUDE, lat.toFloat())
+                        Log.e(TAG, "My coordinates: $lat + $lon")
                         editor.apply()
-                        Log.e(TAG,"My coordinates: $lon + $lat")
+
 
                     }
 
@@ -261,10 +321,10 @@ private fun actionBarUI(){
 
 
     companion object {
-        private val TAG = MapsActivity::class.java.simpleName
+        private const val TAG = "Maps"
         private const val DEFAULT_ZOOM = 15
         private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
-
+        const val earthRadiusKm: Double = 6372.8
         // Keys for storing activity state.
         private const val KEY_CAMERA_POSITION = "camera_position"
         private const val KEY_LOCATION = "location"
