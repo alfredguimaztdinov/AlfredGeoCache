@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">AlfredGeoCache</string>
     <string name="title_activity_maps">Map</string>
+    <string name="drop_pin">Drop Pin</string>
+    <string name="calculate">Calculate</string>
+    <string name="navigate">Navigate</string>
 </resources>

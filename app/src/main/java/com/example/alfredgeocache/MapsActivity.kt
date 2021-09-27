@@ -60,24 +60,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
 
-
-
-
-
-
-//    override fun onSaveInstanceState(outState: Bundle) {
-//        mMap?.let { map ->
-//            outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
-//            outState.putParcelable(KEY_LOCATION, lastKnownLocation)
-//        }
-//        super.onSaveInstanceState(outState)
-//    }
-
-
-
-
-
-
     override fun onMapReady(map: GoogleMap) {
         this.mMap = map
         // Prompt the user for permission.
@@ -93,10 +75,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun getDeviceLocation() {
-        /*
-         * Get the best and most recent location of the device, which may be null in rare
-         * cases when a location is not available.
-         */
+
         try {
             if (locationPermissionGranted) {
                 val locationResult = fusedLocationClient.lastLocation
@@ -105,7 +84,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         // Set the map's camera position to the current location of the device.
                         lastKnownLocation = task.result
                         if (lastKnownLocation != null) {
-                            mMap?.moveCamera(
+                            mMap.moveCamera(
                                     CameraUpdateFactory.newLatLngZoom(
                                             LatLng(
                                                     lastKnownLocation!!.latitude,
@@ -115,13 +94,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             )
                         }
                     } else {
-                        Log.d(TAG, "Current location is null. Using defaults.")
+                        Log.d(TAG, "Current location is null.")
                         Log.e(TAG, "Exception: %s", task.exception)
-                        mMap?.moveCamera(
+                        mMap.moveCamera(
                                 CameraUpdateFactory
                                         .newLatLngZoom(defaultLocation, DEFAULT_ZOOM.toFloat())
                         )
-                        mMap?.uiSettings?.isMyLocationButtonEnabled = false
+                        mMap.uiSettings.isMyLocationButtonEnabled = false
                     }
                 }
             }
@@ -177,16 +156,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * Updates the map's UI settings based on whether the user has granted location permission.
      */
     private fun updateLocationUI() {
-        if (mMap == null) {
-            return
-        }
         try {
             if (locationPermissionGranted) {
-                mMap?.isMyLocationEnabled = true
-                mMap?.uiSettings?.isMyLocationButtonEnabled = true
+                mMap.isMyLocationEnabled = true
+                mMap.uiSettings.isMyLocationButtonEnabled = true
             } else {
-                mMap?.isMyLocationEnabled = false
-                mMap?.uiSettings?.isMyLocationButtonEnabled = false
+                mMap.isMyLocationEnabled = false
+                mMap.uiSettings.isMyLocationButtonEnabled = false
                 lastKnownLocation = null
                 getLocationPermission()
             }
@@ -197,7 +173,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun loadMarker(){
 
-        val sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, MODE_PRIVATE)
+            val sharedPreferences = getSharedPreferences(SHARED_PREF_NAME, MODE_PRIVATE)
 
 
             val sharedPreferencess = getSharedPreferences(this.SHARED_PREF_NAME, MODE_PRIVATE)
@@ -227,34 +203,42 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val lat = sharedPreferencess.getFloat(this.LATITUDE, 0.0f).toDouble()
         //Check if navigate was clicked
         if (item.itemId == R.id.miNavigate){
-
+        //launch Navigation in Walking form
             val gmmIntentUri =
-                    Uri.parse("google.navigation:q=$lon,$lat")
+                    Uri.parse("google.navigation:q=$lon,$lat+&mode=w")
 
             val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
             mapIntent.setPackage("com.google.android.apps.maps")
             startActivity(mapIntent)
+            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
             Log.i(TAG, "Navigate tapped")
             Log.i(TAG, "$lon, $lat")
             return true
         }
+
+        //Calculate distance from Pin using Haversine
         if (item.itemId == R.id.miCalculate){
             val lat2 = lastKnownLocation!!.latitude
             val lon2 = lastKnownLocation!!.longitude
 
-            val dLat = Math.toRadians(lat - lat2);
-            val dLon = Math.toRadians(lon - lon2);
-            val originLat = Math.toRadians(lat2);
-            val destinationLat = Math.toRadians(lat);
-            Log.i(TAG, "$lon, $lat, $lat2, $lon2, $dLat, $dLon")
-            val a = sin(dLat / 2).pow(2.toDouble()) + sin(dLon / 2).pow(2.toDouble()) * cos(originLat) * cos(destinationLat);
-            val c = 2 * asin(sqrt(a));
+            val dLat = Math.toRadians(lon2 - lat)
+            val dLon = Math.toRadians(lat2 - lat2)
 
-            Log.i(TAG, "$c")
+
+            val originLat = Math.toRadians(lon)
+            val destinationLat = Math.toRadians(lon2)
+            Log.i(TAG, "$lon, $lat, $lat2, $lon2, $dLat, $dLon")
+            val a = sin(dLat / 2).pow(2.0) +
+                    sin(dLon / 2).pow(2.0) *
+                    cos(originLat) *
+                    cos(destinationLat)
+            val c = 2 * asin(sqrt(a))*rad
+            val distance:Double = Math.round(c * 1000.0) / 1000.0
+
             val distanceCar = AlertDialog.Builder(this)
                     .setTitle("Distance")
-                    .setMessage("$c Meters from your vehicle")
-                    .setPositiveButton("Ok"){_,_,-> }
+                    .setMessage("$distance KM from your vehicle")
+                    .setPositiveButton("Ok"){ _, _-> }
                     .create()
             distanceCar.show()
 
@@ -278,8 +262,8 @@ private fun actionBarUI(){
                         // Set the map's camera position to the current location of the device.
                         lastKnownLocation = task.result
                         //add marker to current location
-                        mMap.clear();
-                        val marker = mMap.addMarker(
+                        mMap.clear()
+                         mMap.addMarker(
                                 MarkerOptions().position(
                                         LatLng(
                                                 lastKnownLocation!!.latitude,
@@ -322,15 +306,10 @@ private fun actionBarUI(){
 
     companion object {
         private const val TAG = "Maps"
+        private const val rad = 6371.0
         private const val DEFAULT_ZOOM = 15
         private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
-        const val earthRadiusKm: Double = 6372.8
-        // Keys for storing activity state.
-        private const val KEY_CAMERA_POSITION = "camera_position"
-        private const val KEY_LOCATION = "location"
 
-        // Used for selecting the current place.
-        private const val M_MAX_ENTRIES = 5
     }
 
 }

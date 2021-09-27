@@ -5,11 +5,11 @@
     <item
         android:id="@+id/miCalculate"
         android:icon="@drawable/ic_baseline_access_time_filled_24"
-        android:title="Calculate"
+        android:title="@string/calculate"
         app:showAsAction="always" />
     <item
         android:id="@+id/miNavigate"
         android:icon="@drawable/ic_baseline_directions_24"
-        android:title="Navigate"
+        android:title="@string/navigate"
         app:showAsAction="always" />
 </menu>
